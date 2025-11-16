@@ -1,33 +1,38 @@
 name: Java CI with Gradle
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: '17'
 
       - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+        run: chmod +x gradlew
 
       - name: Start SUT
-        run: java -jar ./artifacts/app-ibank-build-for-testers.jar &
-
-      - name: Wait for SUT
-        run: sleep 8
+        run: |
+          java -jar ./artifacts/app-mbank.jar &
+          sleep 8   # ждём пока приложение полностью поднимется
 
       - name: Run tests
-        env:
-          SELENIDE_BROWSER: chrome
-          SELENIDE_HEADLESS: true
-          SELENIDE_CHROME_ARGUMENTS: --no-sandbox,--disable-dev-shm-usage,--disable-gpu,--disable-dev-tools,--headless=new,--remote-allow-origins=*
-        run: ./gradlew test --info
+        run: ./gradlew test -Dselenide.headless=true --info
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: build/reports/tests/test
 
