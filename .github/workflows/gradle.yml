@@ -2,30 +2,38 @@ name: Java CI with Gradle
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Клонируем репозиторий
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2. Устанавливаем Java 17 (у тебя проект на 17)
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 3. Делаем gradlew исполняемым
       - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
 
-      - name: Start SUT
+      # 4. Запускаем приложение SUT
+      - name: Start application
         run: java -jar ./artifacts/app-ibank-build-for-testers.jar &
+      
+      # 5. Ждём поднятие сервера
+      - name: Wait for SUT to start
+        run: sleep 10
 
-      - name: Wait SUT
-        run: sleep 15
-
+      # 6. Запускаем тесты в headless-режиме
       - name: Run tests
-        run: ./gradlew test -Dselenide.headless=true --info
+        run: ./gradlew test --info -Dselenide.headless=true
